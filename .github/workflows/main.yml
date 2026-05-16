@@ -20,27 +20,37 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # 直接在根目录执行，不指定 working-directory
+      # 1. 初始化项目环境（补全缺失的 android 和 web 文件夹）
+      # 如果你的 pubspec.yaml 确实在 code 文件夹里，请保留 working-directory
+      - name: Initialize Platforms
+        run: flutter create . --platforms android,web
+        working-directory: code
+
+      # 2. 获取依赖
       - name: Install dependencies
         run: flutter pub get
+        working-directory: code
 
-      - name: Initialize Web
-        run: flutter create . --platforms web
-
+      # 3. 构建 Web 版本用于在线预览
       - name: Build Web
         run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+        working-directory: code
 
+      # 4. 构建 Android APK
       - name: Build APK
         run: flutter build apk --split-per-abi
+        working-directory: code
 
+      # 5. 部署 Web 到 GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web 
+          publish_dir: ./code/build/web 
 
+      # 6. 上传 APK 供下载
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          path: code/build/app/outputs/flutter-apk/*.apk
