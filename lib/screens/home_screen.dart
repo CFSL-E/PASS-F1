@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerLowest, // 统一使用带极淡色调的容器最底色
       body: SafeArea(
         child: Column(
           children: [
@@ -34,11 +34,15 @@ class _HomeScreenState extends State<HomeScreen> {
               child: SearchBar(
                 hintText: '搜索密码',
                 elevation: const WidgetStatePropertyAll(0),
+                // 使用比底色深几个层级的颜色来区分搜索框，使其不融入背景
                 backgroundColor: WidgetStatePropertyAll(colorScheme.surfaceContainerHigh),
                 leading: IconButton(
                   icon: const Icon(Icons.menu),
                   onPressed: () {
-                    // 原生进场动画推入导航栈，打开二级设置页
+                    // 防抖处理：避免误触连点堆叠多个二级页面
+                    if (!ModalRoute.of(context)!.isCurrent) return;
+
+                    // 纯粹地推入原生导航栈，动画交由 main.dart 中的全局配置接管
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -81,14 +85,21 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      // M3 标准悬浮按钮
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        elevation: 1, // 扁平化倾向，去掉厚重阴影
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        child: const Icon(Icons.add, size: 28),
+      // M3 标准悬浮按钮：微调尺寸（略大于默认的56）并增加离右下角的安全边距
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(right: 8.0, bottom: 16.0),
+        child: SizedBox(
+          width: 64,  // 原先太小，现在放大为 64x64
+          height: 64,
+          child: FloatingActionButton(
+            onPressed: () {},
+            elevation: 2, 
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: colorScheme.primaryContainer,
+            foregroundColor: colorScheme.onPrimaryContainer,
+            child: const Icon(Icons.add, size: 30),
+          ),
+        ),
       ),
     );
   }

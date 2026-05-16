@@ -9,7 +9,7 @@ class SettingsScreen extends StatelessWidget {
 
     // 返回一个全新的 Scaffold，这确保了它是真正的二级页面并占据整个系统导航视图
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surface, // 二级页面通常用无特殊提亮的纯净底色
       appBar: AppBar(
         // automaticallyImplyLeading 为 true，会自动推断并带上原生的返回按钮
         automaticallyImplyLeading: true,
@@ -26,20 +26,25 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('主题设置'),
             subtitle: const Text('跟随系统动态色彩提取'),
             onTap: () {
-              // 在这里可以继续调用 Navigator.push() 进入三级页面
+              // 继续向深层入栈时同样加防抖
+              if (!ModalRoute.of(context)!.isCurrent) return;
             },
           ),
           ListTile(
             leading: Icon(Icons.security_outlined, color: colorScheme.primary),
             title: const Text('安全设置'),
             subtitle: const Text('本地生物识别、安全锁'),
-            onTap: () {},
+            onTap: () {
+              if (!ModalRoute.of(context)!.isCurrent) return;
+            },
           ),
           ListTile(
             leading: Icon(Icons.folder_outlined, color: colorScheme.primary),
             title: const Text('数据备份'),
             subtitle: const Text('本地加密导出'),
-            onTap: () {},
+            onTap: () {
+              if (!ModalRoute.of(context)!.isCurrent) return;
+            },
           ),
           Divider(color: colorScheme.surfaceContainerHigh, height: 32),
           ListTile(
