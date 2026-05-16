@@ -1,4 +1,16 @@
-steps:
+name: Flutter Build & Preview
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
       - uses: actions/checkout@v4
 
       - name: Set up Flutter
@@ -8,22 +20,36 @@ steps:
           channel: 'stable'
           cache: true
 
+      # 关键修改点 1：确保工作目录正确
+      # 根据你之前的情况，如果 pubspec.yaml 在 code 文件夹下，请统一开启 working-directory
+      
       - name: Install dependencies
         run: flutter pub get
-        working-directory: code # 如果你的 pubspec.yaml 在 code 目录下，请保留此行
+        working-directory: code # 如果文件就在根目录，请删除此行
 
-      # --- 新增步骤：为项目自动生成 Web 配置文件 ---
-      - name: Enable Web Support
+      # 关键修改点 2：动态创建 Web 配置
+      - name: Initialize Web
         run: flutter create . --platforms web
-        working-directory: code 
+        working-directory: code # 如果文件就在根目录，请删除此行
 
       - name: Build Web
-        # 注意：这里的 --base-href 必须和你的仓库名一致才能正确加载资源
+        # 这里的 --base-href 需确保与你的仓库名一致
         run: flutter build web --release --base-href "/PASS-F1/"
-        working-directory: code
+        working-directory: code # 如果文件就在根目录，请删除此行
+
+      - name: Build APK
+        run: flutter build apk --split-per-abi
+        working-directory: code # 如果文件就在根目录，请删除此行
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./code/build/web # 注意路径需包含 code
+          # 产物路径也要对应 working-directory 调整
+          publish_dir: ./code/build/web 
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: code/build/app/outputs/flutter-apk/*.apk
