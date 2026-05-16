@@ -7,7 +7,36 @@ void main() {
   runApp(const PasswordManagerApp());
 }
 
-// 自定义全局过渡：Pixel 风格 Shared Axis (X轴水平平移)
+// 提供自定义带时长的 PageRoute，以达到 450ms 的沉稳 Pixel 动画体验
+class PixelPageRoute<T> extends PageRouteBuilder<T> {
+  final Widget page;
+
+  PixelPageRoute({required this.page})
+      : super(
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionDuration: const Duration(milliseconds: 450),
+          reverseTransitionDuration: const Duration(milliseconds: 450),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curveAnimation = CurvedAnimation(
+              parent: animation,
+              // 改用 easeInOutCubic 提供更沉稳的阻尼感，消除生硬弹跳
+              curve: Curves.easeInOutCubic,
+              reverseCurve: Curves.easeInOutCubic.flipped,
+            );
+
+            return SharedAxisTransition(
+              animation: curveAnimation,
+              secondaryAnimation: secondaryAnimation,
+              transitionType: SharedAxisTransitionType.horizontal,
+              // 消除黑色底层闪烁：填充与当前环境完全一致的表层背景色
+              fillColor: Theme.of(context).colorScheme.surface,
+              child: child,
+            );
+          },
+        );
+}
+
+// 全局兜底动画配置，顺便修复黑色遮罩问题与曲线统一
 class PixelPageTransitionsBuilder extends PageTransitionsBuilder {
   const PixelPageTransitionsBuilder();
 
@@ -19,18 +48,18 @@ class PixelPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    // 注入 fastOutSlowIn 曲线以提供完美的“快进慢出”阻尼感
+    // 采用与 PixelPageRoute 相同的过渡曲线
     final curveAnimation = CurvedAnimation(
       parent: animation,
-      curve: Curves.fastOutSlowIn,
-      reverseCurve: Curves.fastOutSlowIn.flipped,
+      curve: Curves.easeInOutCubic,
+      reverseCurve: Curves.easeInOutCubic.flipped,
     );
 
     return SharedAxisTransition(
       animation: curveAnimation,
       secondaryAnimation: secondaryAnimation,
       transitionType: SharedAxisTransitionType.horizontal,
-      fillColor: Colors.transparent, // 避免多余的背景色闪烁
+      fillColor: Theme.of(context).colorScheme.surface, // 修复黑色闪烁
       child: child,
     );
   }
@@ -61,8 +90,7 @@ class PasswordManagerApp extends StatelessWidget {
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: lightScheme,
-            // 显式指定底色范围，确保浅色模式下带有淡淡的动态取色氛围（而非惨白）
-            scaffoldBackgroundColor: lightScheme.surfaceContainerLowest,
+            // 移除纯白背景强制覆盖，使用 MD3 默认自带的主题色调表面颜色 (surface)
             pageTransitionsTheme: const PageTransitionsTheme(
               builders: {
                 TargetPlatform.android: PixelPageTransitionsBuilder(),
@@ -73,7 +101,6 @@ class PasswordManagerApp extends StatelessWidget {
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme: darkScheme,
-            scaffoldBackgroundColor: darkScheme.surfaceContainerLowest,
             pageTransitionsTheme: const PageTransitionsTheme(
               builders: {
                 TargetPlatform.android: PixelPageTransitionsBuilder(),

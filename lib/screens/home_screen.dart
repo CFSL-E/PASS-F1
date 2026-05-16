@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../main.dart'; // 引入自定义的 PixelPageRoute
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerLowest, // 统一使用带极淡色调的容器最底色
+      backgroundColor: colorScheme.surface, // 拥抱 M3 的原生表面色（带主题色调），去除惨白
       body: SafeArea(
         child: Column(
           children: [
@@ -42,12 +43,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     // 防抖处理：避免误触连点堆叠多个二级页面
                     if (!ModalRoute.of(context)!.isCurrent) return;
 
-                    // 纯粹地推入原生导航栈，动画交由 main.dart 中的全局配置接管
+                    // 使用自定义时长的 PixelPageRoute 推入导航栈
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsScreen(),
-                      ),
+                      PixelPageRoute(page: const SettingsScreen()),
                     );
                   },
                 ),
