@@ -1,17 +1,24 @@
-name: Flutter Build & Preview
+name: Flutter Full Auto Repair & Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17' # Android 构建必须
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -20,37 +27,40 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # 1. 初始化项目环境（补全缺失的 android 和 web 文件夹）
-      # 如果你的 pubspec.yaml 确实在 code 文件夹里，请保留 working-directory
-      - name: Initialize Platforms
-        run: flutter create . --platforms android,web
-        working-directory: code
+      # 核心修复步骤：自动寻找项目根目录并初始化
+      - name: Auto Repair Project Structure
+        run: |
+          # 寻找 pubspec.yaml 所在的真实路径
+          PROJECT_ROOT=$(find . -name "pubspec.yaml" -exec dirname {} \;)
+          echo "PROJECT_DIR=$PROJECT_ROOT" >> $GITHUB_ENV
+          echo "Found project at: $PROJECT_ROOT"
+          
+          cd $PROJECT_ROOT
+          # 一次性补全所有缺失的平台文件夹 (android, web)
+          flutter create . --platforms android,web --overwrite
+          
+          # 确保依赖同步
+          flutter pub get
 
-      # 2. 获取依赖
-      - name: Install dependencies
-        run: flutter pub get
-        working-directory: code
+      - name: Build Web Preview
+        run: |
+          cd ${{ env.PROJECT_DIR }}
+          flutter build web --release --base-href "/${{ github.event.repository.name }}/"
 
-      # 3. 构建 Web 版本用于在线预览
-      - name: Build Web
-        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
-        working-directory: code
+      - name: Build Android APK
+        run: |
+          cd ${{ env.PROJECT_DIR }}
+          # 这里的 build 会使用刚才自动生成的 Gradle 配置
+          flutter build apk --release --split-per-abi
 
-      # 4. 构建 Android APK
-      - name: Build APK
-        run: flutter build apk --split-per-abi
-        working-directory: code
-
-      # 5. 部署 Web 到 GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./code/build/web 
+          publish_dir: ${{ env.PROJECT_DIR }}/build/web
 
-      # 6. 上传 APK 供下载
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: code/build/app/outputs/flutter-apk/*.apk
+          name: pass-app-apk
+          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/*.apk
