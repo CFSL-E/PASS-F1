@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../main.dart'; // 引入自定义的 PixelPageRoute
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface, // 拥抱 M3 的原生表面色（带主题色调），去除惨白
+      backgroundColor: colorScheme.surfaceContainerLow, // Use distinct MD3 low surface background
       body: SafeArea(
         child: Column(
           children: [
@@ -35,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: SearchBar(
                 hintText: '搜索密码',
                 elevation: const WidgetStatePropertyAll(0),
-                // 使用比底色深几个层级的颜色来区分搜索框，使其不融入背景
                 backgroundColor: WidgetStatePropertyAll(colorScheme.surfaceContainerHigh),
                 leading: IconButton(
                   icon: const Icon(Icons.menu),
@@ -43,10 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     // 防抖处理：避免误触连点堆叠多个二级页面
                     if (!ModalRoute.of(context)!.isCurrent) return;
 
-                    // 使用自定义时长的 PixelPageRoute 推入导航栈
                     Navigator.push(
                       context,
-                      PixelPageRoute(page: const SettingsScreen()),
+                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
                     );
                   },
                 ),
@@ -133,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPasswordCard(Map<String, String> item, ColorScheme colorScheme, TextTheme textTheme) {
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(24),
       ),
       child: ListTile(
